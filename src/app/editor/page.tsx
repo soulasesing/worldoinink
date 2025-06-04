@@ -5,18 +5,31 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-hot-toast';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css'; // import styles
 
 export default function EditorPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState(''); // Content will now be HTML string
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login');
     }
+    // Optional: Fetch existing story content if editing
+    // const storyId = router.query.id; // Example if using dynamic routes like /editor/[id]
+    // if (storyId) {
+    //   fetch(`/api/stories/${storyId}`)
+    //     .then(res => res.json())
+    //     .then(data => {
+    //       setTitle(data.title);
+    //       setContent(data.content);
+    //     })
+    //     .catch(error => toast.error('Failed to fetch story'));
+    // }
   }, [status, router]);
 
   const handleSave = async () => {
@@ -45,6 +58,7 @@ export default function EditorPage() {
       toast.success('Story saved successfully');
       router.push('/dashboard');
     } catch (error) {
+      console.error('Failed to save story:', error);
       toast.error('Failed to save story');
     } finally {
       setIsSaving(false);
@@ -61,8 +75,27 @@ export default function EditorPage() {
     );
   }
 
+  // Configure Quill toolbar modules
+  const modules = {
+    toolbar: [
+      [{ 'header': '1' }, { 'header': '2' }, { 'font': [] }],
+      [{ size: [] }],
+      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+      ['link', 'image', 'video'],
+      ['clean']
+    ],
+  };
+
+  const formats = [
+    'header', 'font', 'size',
+    'bold', 'italic', 'underline', 'strike', 'blockquote',
+    'list', 'bullet', 'indent',
+    'link', 'image', 'video'
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pt-16">
       <div className="flex justify-between items-center mb-8">
         <input
           type="text"
@@ -77,11 +110,14 @@ export default function EditorPage() {
       </div>
 
       <div className="prose prose-lg max-w-none">
-        <textarea
+        <ReactQuill
+          theme="snow"
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={setContent}
+          modules={modules}
+          formats={formats}
           placeholder="Start writing your story..."
-          className="w-full h-[calc(100vh-200px)] p-4 bg-transparent border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+          className="w-full h-[calc(100vh-200px)] bg-transparent border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
     </div>

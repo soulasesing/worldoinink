@@ -64,6 +64,59 @@ export default function Home() {
         </div>
       </section>
 
+      {/* New Boxes Section */}
+      <section className="py-20 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold">Explore Features</h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Discover what World in Ink can do for you.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Box 1 */}
+            <div className="relative overflow-hidden rounded-lg bg-card p-6 shadow-lg transition-transform duration-300 hover:-translate-y-2 hover:shadow-2xl border border-border">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 opacity-0 transition-opacity duration-300 hover:opacity-100" />
+              <div className="relative z-10 space-y-4">
+                <h3 className="text-xl font-semibold text-card-foreground">Placeholder Title 1</h3>
+                <p className="text-muted-foreground">This is a placeholder for a feature description or content block. It highlights a key aspect of the application.</p>
+                <div className="pt-4">
+                  {/* Placeholder for a button or link */}
+                  <span className="text-primary font-medium">Learn More &rarr;</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Box 2 */}
+            <div className="relative overflow-hidden rounded-lg bg-card p-6 shadow-lg transition-transform duration-300 hover:-translate-y-2 hover:shadow-2xl border border-border">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 opacity-0 transition-opacity duration-300 hover:opacity-100" />
+              <div className="relative z-10 space-y-4">
+                <h3 className="text-xl font-semibold text-card-foreground">Placeholder Title 2</h3>
+                <p className="text-muted-foreground">This is another placeholder text to describe a different feature or aspect of World in Ink.</p>
+                <div className="pt-4">
+                  {/* Placeholder for a button or link */}
+                  <span className="text-primary font-medium">Discover More &rarr;</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Box 3 */}
+            <div className="relative overflow-hidden rounded-lg bg-card p-6 shadow-lg transition-transform duration-300 hover:-translate-y-2 hover:shadow-2xl border border-border">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-yellow-500/10 opacity-0 transition-opacity duration-300 hover:opacity-100" />
+              <div className="relative z-10 space-y-4">
+                <h3 className="text-xl font-semibold text-card-foreground">Placeholder Title 3</h3>
+                <p className="text-muted-foreground">And a third placeholder, representing yet another exciting feature or benefit of using our platform.</p>
+                <div className="pt-4">
+                  {/* Placeholder for a button or link */}
+                  <span className="text-primary font-medium">Explore Now &rarr;</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

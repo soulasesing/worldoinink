@@ -339,7 +339,7 @@ export default function EditorPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowStoryManager(!showStoryManager)}
-                className="flex items-center space-x-1"
+                className="flex items-center space-x-1 text-blue-300"
               >
                 <FolderOpen className="w-4 h-4" />
                 <span>Stories</span>
@@ -349,7 +349,7 @@ export default function EditorPage() {
                 variant="outline"
                 size="sm"
                 onClick={handleNewStory}
-                className="flex items-center space-x-1"
+                className="flex items-center space-x-1 text-blue-300"
               >
                 <Plus className="w-4 h-4" />
                 <span>New</span>

@@ -33,7 +33,12 @@ export default function AiAssistantSidebar({ isOpen, onToggle }: AiAssistantSide
 
   // Scroll to the latest message
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Adding a small delay to ensure DOM updates before scrolling
+    const scrollTimer = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 0);
+
+    return () => clearTimeout(scrollTimer);
   }, [messages]);
 
   // Create a new thread when the component mounts if none exists

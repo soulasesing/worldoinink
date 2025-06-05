@@ -90,43 +90,6 @@ export default function Home() {
     { number: "99%", label: "Uptime" }
   ];
 
-  const Button = ({ children, size = "default", variant = "default", className = "", onClick, ...props }) => {
-    const sizeClasses = {
-      default: "px-4 py-2 text-sm",
-      lg: "px-6 py-3 text-base"
-    };
-    
-    const variantClasses = {
-      default: "bg-blue-600 hover:bg-blue-700 text-white",
-      outline: "border border-gray-300 text-gray-700 hover:bg-gray-50 bg-transparent"
-    };
-    
-    return (
-      <button 
-        className={`font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
-        onClick={onClick}
-        {...props}
-      >
-        {children}
-      </button>
-    );
-  };
-
-  const Link = ({ href, children, className = "" }) => {
-    return (
-      <a 
-        href={href} 
-        className={`cursor-pointer ${className}`}
-        onClick={(e) => {
-          e.preventDefault();
-          console.log(`Navigate to: ${href}`);
-        }}
-      >
-        {children}
-      </a>
-    );
-  };
-
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden">
       

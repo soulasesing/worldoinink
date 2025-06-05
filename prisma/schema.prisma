@@ -57,6 +57,7 @@ model Story {
   id          String   @id @default(cuid())
   title       String
   content     String   @db.Text
+  wordCount   Int      @default(0)
   published   Boolean  @default(false)
   views       Int      @default(0)
   likes       Int      @default(0)

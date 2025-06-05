@@ -228,7 +228,7 @@ export default function AiAssistantSidebar({ isOpen, onToggle }: AiAssistantSide
               // Chat Interface
               <div className="flex flex-col h-full">
                  {/* Back button */}                 <div className="pb-4 border-b border-white/10 mb-4">
-                   <Button variant="ghost" size="sm" onClick={() => setActiveFeature(null)} className="text-muted-foreground hover:text-primary">
+                   <Button variant="ghost" size="sm" onClick={() => setActiveFeature(null)} className="text-blue-300 hover:text-primary">
                      <ChevronLeft className="h-4 w-4 mr-2" /> Back to Menu
                    </Button>
                  </div>

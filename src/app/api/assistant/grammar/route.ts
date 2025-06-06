@@ -56,6 +56,7 @@ Focus on:
 
 Only include suggestions that would genuinely improve the text and match the specified writing style.
 Consider the context and intended audience when making suggestions.
+If the text is in a foreign language, provide suggestions in the same language.
 Provide confidence scores based on the certainty of each suggestion.`;
 
     const completion = await openai.chat.completions.create({
@@ -75,6 +76,7 @@ Provide confidence scores based on the certainty of each suggestion.`;
           Provide detailed, constructive feedback that helps improve the text while maintaining the author's voice and intent.
           Consider the specified writing style and context when making suggestions.
           Only suggest changes that would genuinely improve the text.
+          If the text is in a foreign language, provide suggestions in the same language.
           Provide confidence scores based on the certainty of each suggestion.`
         },
         {

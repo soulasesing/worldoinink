@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Sparkles, MessageCircle, Lightbulb, Zap, Bot, Settings, Send, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import GrammarFeature from './grammar-feature';
 
 interface AiAssistantSidebarProps {
   isOpen: boolean;
@@ -30,6 +31,9 @@ export default function AiAssistantSidebar({ isOpen, onToggle }: AiAssistantSide
     { icon: Zap, label: 'Grammar', color: 'from-green-500 to-emerald-500' },
     { icon: Bot, label: 'Characters', color: 'from-purple-500 to-pink-500' }
   ];
+
+  const chatFeatureIndex = features.findIndex(f => f.label === 'Chat');
+  const grammarFeatureIndex = features.findIndex(f => f.label === 'Grammar');
 
   // Scroll to the latest message
   useEffect(() => {
@@ -67,7 +71,7 @@ export default function AiAssistantSidebar({ isOpen, onToggle }: AiAssistantSide
       };
       createThread();
     }
-  }, []); // Run only once on mount
+  }, []);
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || !threadId) return;
@@ -134,8 +138,8 @@ export default function AiAssistantSidebar({ isOpen, onToggle }: AiAssistantSide
           <div className="absolute bottom-20 left-1/2 w-20 h-20 bg-gradient-to-r from-green-500/20 to-cyan-500/20 rounded-full blur-lg animate-pulse delay-2000"></div>
         </div>
 
-        {/* Sidebar Header */}      <div className="relative p-4 border-b border-white/10">
-          <div className="flex items-center justify-between">
+        {/* Sidebar Header */}      
+          <div className="flex items-center justify-between p-4">
             {isOpen && (
               <div className="flex items-center space-x-3 animate-fadeIn">
                 <div className="relative">
@@ -163,11 +167,16 @@ export default function AiAssistantSidebar({ isOpen, onToggle }: AiAssistantSide
               {isOpen ? <ChevronLeft className="w-4 h-4 relative z-10" /> : <ChevronRight className="w-4 h-4 relative z-10" />}
             </Button>
           </div>
-        </div>
 
-        {/* Expanded Content */}        {isOpen && (
-          <div key={isOpen ? 'expanded-content' : 'collapsed-content'} className="flex-1 flex flex-col p-4 space-y-6 animate-slideIn">
-
+        {/* Expanded Content */}
+            {/* {isOpen && (
+              <div key={isOpen ? 'expanded-content' : 'collapsed-content'} className="flex-1 flex flex-col p-4 space-y-6 animate-slideIn overflow-y-auto"> */}
+        {isOpen && (
+              <div
+                key={isOpen ? 'expanded-content' : 'collapsed-content'}
+                className="flex flex-col p-4 space-y-6 animate-slideIn overflow-y-auto"
+                style={{ maxHeight: 'calc(100vh - 64px)' }} // Ajusta según tu header
+              >
             {activeFeature === null ? (
               // Main Feature Menu
               <>
@@ -229,72 +238,88 @@ export default function AiAssistantSidebar({ isOpen, onToggle }: AiAssistantSide
                   <span className="text-gray-300 group-hover:text-white transition-colors duration-300">Settings</span>
                 </button>
               </>
-            ) : activeFeature === features.findIndex(f => f.label === 'Chat') ? (
-              // Chat Interface
+            ) : (
+              // Render the active feature component
               <div className="flex flex-col h-full">
                  {/* Back button */}                 <div className="pb-4 border-b border-white/10 mb-4">
                    <Button variant="ghost" size="sm" onClick={() => setActiveFeature(null)} className="text-blue-300 hover:text-primary">
                      <ChevronLeft className="h-4 w-4 mr-2" /> Back to Menu
                    </Button>
                  </div>
-                {/* Message Display Area */}
+
+                {/* Feature Content Area */}
                 <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-                  {messages.map((msg, index) => (
-                    <div
-                      key={index}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div className={`max-w-[80%] p-3 rounded-lg ${msg.role === 'user'
-                        ? 'bg-blue-500 text-white rounded-br-none'
-                        : 'bg-gray-700 text-gray-200 rounded-bl-none'
-                        }`}>
-                        {msg.content}
-                      </div>
-                    </div>
-                  ))}
-                  {/* Loading Indicator */}                  {isLoading && (
-                    <div className="flex justify-start">
-                      <div className="max-w-[80%] p-3 rounded-lg bg-gray-700 text-gray-200 rounded-bl-none flex items-center space-x-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Assistant is thinking...</span>
-                      </div>
-                    </div>
+                  {/* Chat Interface Display Area */}
+                  {activeFeature === chatFeatureIndex && (
+                    <>
+                      {messages.map((msg, index) => (
+                        <div
+                          key={index}
+                          className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div className={`max-w-[80%] p-3 rounded-lg ${msg.role === 'user'
+                            ? 'bg-blue-500 text-white rounded-br-none'
+                            : 'bg-gray-700 text-gray-200 rounded-bl-none'
+                            }`}>
+                            {msg.content}
+                          </div>
+                        </div>
+                      ))}
+                      {/* Loading Indicator */}                      {isLoading && (
+                        <div className="flex justify-start">
+                          <div className="max-w-[80%] p-3 rounded-lg bg-gray-700 text-gray-200 rounded-bl-none flex items-center space-x-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Assistant is thinking...</span>
+                          </div>
+                        </div>
+                      )}
+                      <div ref={messagesEndRef} /> {/* Scroll anchor */}
+                    </>
                   )}
-                  <div ref={messagesEndRef} /> {/* Scroll anchor */}
+
+                  {/* Grammar Feature Interface */}
+                  {activeFeature === grammarFeatureIndex && (
+                    <GrammarFeature onClose={() => setActiveFeature(null)} />
+                  )}
+
+                   {/* Placeholder for other features */}
+                  {activeFeature !== chatFeatureIndex && activeFeature !== grammarFeatureIndex && (
+                      <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                        <p className="text-center">{`'${features[activeFeature]?.label}' feature coming soon!`}</p>
+                      </div>
+                  )}
                 </div>
 
-                {/* Input Area */}
-                <div className="flex items-center space-x-2 pt-4 border-t border-white/10">
-                  <input
-                    type="text"
-                    placeholder={threadId ? "Ask the AI..." : "Creating thread..."}
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    className="flex-1 p-2 rounded-md bg-white/10 text-white border border-white/20 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={isLoading || !threadId}
-                  />
-                  <Button
-                    onClick={sendMessage}
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={isLoading || !inputMessage.trim() || !threadId}
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              // Placeholder for other features
-              <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                <p className="text-center">{`'${features[activeFeature]?.label}' feature coming soon!`}</p>
+                {/* Input Area (only for chat feature)*/}
+                {activeFeature === chatFeatureIndex && (
+                  <div className="flex items-center space-x-2 pt-4 border-t border-white/10">
+                    <input
+                      type="text"
+                      placeholder={threadId ? "Ask the AI..." : "Creating thread..."}
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      className="flex-1 p-2 rounded-md bg-white/10 text-white border border-white/20 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={isLoading || !threadId}
+                    />
+                    <Button
+                      onClick={sendMessage}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={isLoading || !inputMessage.trim() || !threadId}
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
           </div>
         )}
 
-        {/* Collapsed State */}        {!isOpen && (
+        {/* Collapsed State */}
+        {!isOpen && (
           <div className="flex flex-col items-center py-6 space-y-4">
             <div className="relative group">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">

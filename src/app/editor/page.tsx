@@ -28,7 +28,15 @@ import {
 } from 'lucide-react';
 
 // Dynamically import ReactQuill to ensure it only renders on the client side
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+const ReactQuill = dynamic(
+  async () => {
+    const { default: RQ } = await import('react-quill');
+    return function comp({ forwardedRef, ...props }: any) {
+      return <RQ ref={forwardedRef} {...props} />;
+    };
+  },
+  { ssr: false }
+);
 
 // Types for better type safety
 interface Story {

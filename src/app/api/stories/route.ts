@@ -9,6 +9,41 @@ const storySchema = z.object({
   content: z.string(), // Content can be empty initially
 });
 
+export async function GET(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email as string },
+    });
+
+    if (!user) {
+      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+    }
+
+    const stories = await prisma.story.findMany({
+      where: {
+        authorId: user.id,
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
+
+    return NextResponse.json(stories);
+  } catch (error) {
+    console.error('Error fetching stories:', error);
+    return NextResponse.json(
+      { message: 'Failed to fetch stories' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions); // Corrected call

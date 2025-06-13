@@ -73,7 +73,8 @@ export async function PUT(
       data: {
         title: body.title,
         content: body.content,
-        wordCount: body.wordCount, // Assuming wordCount is sent in the body
+        wordCount: body.wordCount,
+        coverImageUrl: body.coverImageUrl,
         updatedAt: new Date(),
       },
     });

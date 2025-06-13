@@ -1,13 +1,15 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Sparkles, MessageCircle, Lightbulb, Zap, Bot, Settings, Send, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, MessageCircle, Lightbulb, Zap, Bot, Settings, Send, Loader2, ImageIcon } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import GrammarFeature from './grammar-feature';
+import CoverUpFeature from './cover-up-feature';
 
 interface AiAssistantSidebarProps {
   isOpen: boolean;
   onToggle: () => void;
+  onSelectCover?: (imageUrl: string) => void;
 }
 
 interface Message {
@@ -15,7 +17,7 @@ interface Message {
   content: string;
 }
 
-export default function AiAssistantSidebar({ isOpen, onToggle }: AiAssistantSidebarProps) {
+export default function AiAssistantSidebar({ isOpen, onToggle, onSelectCover }: AiAssistantSidebarProps) {
   const [activeFeature, setActiveFeature] = useState<number | null>(null);
   const [isHovering, setIsHovering] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
@@ -27,13 +29,14 @@ export default function AiAssistantSidebar({ isOpen, onToggle }: AiAssistantSide
 
   const features = [
     { icon: MessageCircle, label: 'Chat', color: 'from-blue-500 to-cyan-500' },
-    { icon: Lightbulb, label: 'Ideas', color: 'from-yellow-500 to-orange-500' },
+    { icon: ImageIcon, label: 'CoverUp', color: 'from-yellow-500 to-orange-500' },
     { icon: Zap, label: 'Grammar', color: 'from-green-500 to-emerald-500' },
     { icon: Bot, label: 'Characters', color: 'from-purple-500 to-pink-500' }
   ];
 
   const chatFeatureIndex = features.findIndex(f => f.label === 'Chat');
   const grammarFeatureIndex = features.findIndex(f => f.label === 'Grammar');
+  const coverUpFeatureIndex = features.findIndex(f => f.label === 'CoverUp');
 
   // Scroll to the latest message
   useEffect(() => {
@@ -282,8 +285,12 @@ export default function AiAssistantSidebar({ isOpen, onToggle }: AiAssistantSide
                     <GrammarFeature onClose={() => setActiveFeature(null)} />
                   )}
 
+                  {activeFeature === coverUpFeatureIndex && (
+                    <CoverUpFeature onClose={() => setActiveFeature(null)} onSelectCover={onSelectCover} />
+                  )}
+
                    {/* Placeholder for other features */}
-                  {activeFeature !== chatFeatureIndex && activeFeature !== grammarFeatureIndex && (
+                  {activeFeature !== chatFeatureIndex && activeFeature !== grammarFeatureIndex && activeFeature !== coverUpFeatureIndex && (
                       <div className="flex flex-col items-center justify-center h-full text-gray-400">
                         <p className="text-center">{`'${features[activeFeature]?.label}' feature coming soon!`}</p>
                       </div>

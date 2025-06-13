@@ -7,6 +7,7 @@ import { z } from 'zod';
 const storySchema = z.object({
   title: z.string().min(1, 'Title cannot be empty'),
   content: z.string(), // Content can be empty initially
+  coverImageUrl: z.string().optional(),
 });
 
 export async function GET(req: Request) {
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { title, content } = storySchema.parse(body);
+    const { title, content, coverImageUrl } = storySchema.parse(body);
 
     // Assuming session.user contains the user's ID or email
     // We need to find the user in the database to get their ID
@@ -69,7 +70,8 @@ export async function POST(req: Request) {
       data: {
         title,
         content,
-        authorId: user.id, // Associate the story with the logged-in user
+        coverImageUrl,
+        authorId: user.id,
       },
     });
 

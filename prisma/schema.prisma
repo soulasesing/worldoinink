@@ -66,6 +66,7 @@ model Story {
   authorId    String
   author      User     @relation(fields: [authorId], references: [id])
   characters  Character[]
+  coverImageUrl String?
 }
 
 model Character {

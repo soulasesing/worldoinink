@@ -24,7 +24,8 @@ import {
   Download,
   Upload,
   Star,
-  BookOpen
+  BookOpen,
+  Image
 } from 'lucide-react';
 
 // Dynamically import ReactQuill to ensure it only renders on the client side
@@ -48,6 +49,7 @@ interface Story {
   wordCount: number;
   status: 'draft' | 'published' | 'archived';
   isFavorite: boolean;
+  coverImageUrl?: string;
 }
 
 interface EditorState {
@@ -66,6 +68,7 @@ export default function EditorPage() {
   // Editor state
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [coverImageUrl, setCoverImageUrl] = useState<string | undefined>(undefined);
   const [editorState, setEditorState] = useState<EditorState>({
     mode: 'create',
     currentStory: null,
@@ -145,16 +148,19 @@ export default function EditorPage() {
   // Load specific story
   const loadStory = async (storyId: string) => {
     try {
+      setIsLoadingStories(true);
       const response = await fetch(`/api/stories/${storyId}`);
-      if (response.ok) {
-        const story = await response.json();
-        setTitle(story.title);
-        setContent(story.content);
+      const data = await response.json();
+
+      if (response.ok && data) {
+        setTitle(data.title);
+        setContent(data.content);
+        setCoverImageUrl(data.coverImageUrl || undefined);
         setEditorState({
           mode: 'edit',
-          currentStory: story,
+          currentStory: data,
           hasUnsavedChanges: false,
-          lastSaved: new Date(story.updatedAt)
+          lastSaved: new Date(data.updatedAt)
         });
       } else {
         toast.error('Story not found');
@@ -162,6 +168,8 @@ export default function EditorPage() {
       }
     } catch (error) {
       toast.error('Failed to load story');
+    } finally {
+      setIsLoadingStories(false);
     }
   };
 
@@ -186,7 +194,8 @@ export default function EditorPage() {
           title,
           content,
           wordCount: getWordCount(content),
-          status: 'draft'
+          status: 'draft',
+          coverImageUrl
         }),
       });
 
@@ -200,6 +209,7 @@ export default function EditorPage() {
         hasUnsavedChanges: false,
         lastSaved: new Date()
       });
+      setCoverImageUrl(savedStory.coverImageUrl || undefined);
 
       // Update URL if creating new story
       if (editorState.mode === 'create') {
@@ -228,6 +238,7 @@ export default function EditorPage() {
     
     setTitle('');
     setContent('');
+    setCoverImageUrl(undefined);
     setEditorState({
       mode: 'create',
       currentStory: null,
@@ -275,6 +286,11 @@ export default function EditorPage() {
     }
   };
 
+  const handleSelectCover = (imageUrl: string) => {
+    setCoverImageUrl(imageUrl);
+    toast.success('Cover image selected!');
+  };
+
   // Quill configuration
   const modules = {
     toolbar: [
@@ -311,7 +327,11 @@ export default function EditorPage() {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 pt-16">
       {/* AI Assistant Sidebar */}
-      <AiAssistantSidebar isOpen={isAiSidebarOpen} onToggle={() => setIsAiSidebarOpen(!isAiSidebarOpen)} />
+      <AiAssistantSidebar 
+        isOpen={isAiSidebarOpen} 
+        onToggle={() => setIsAiSidebarOpen(!isAiSidebarOpen)}
+        onSelectCover={handleSelectCover}
+      />
 
       {/* Main Editor Area */}
       <div className={`flex-1 transition-all duration-300 ${isAiSidebarOpen ? 'ml-80' : 'ml-16'}`}>
@@ -339,6 +359,14 @@ export default function EditorPage() {
               <div className="text-xs text-slate-500">
                 {getWordCount(content)} words
               </div>
+
+              {coverImageUrl && (
+                <div className="flex items-center space-x-1 text-xs text-slate-500">
+                  <Image className="w-4 h-4" />
+                  <span>Cover Attached</span>
+                </div>
+              )}
+
             </div>
 
             {/* Right Section - Actions */}
@@ -440,6 +468,22 @@ export default function EditorPage() {
 
         {/* Editor Content */}
         <div className="flex-1 p-6">
+          {coverImageUrl && (
+            <div className="mb-6 w-full max-w-sm mx-auto rounded-lg overflow-hidden shadow-xl border border-slate-200 dark:border-slate-700">
+              <img src={coverImageUrl} alt="Story Cover" className="w-full h-auto object-cover" />
+              <div className="p-2 text-right">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setCoverImageUrl(undefined)} 
+                  className="text-red-500 hover:text-red-600"
+                >
+                  Remove Cover
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Title Input */}
           <div className="mb-8">
             <input

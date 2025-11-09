@@ -6,7 +6,7 @@ import { Loader2, Image } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 interface CoverUpFeatureProps {
-  onClose: () => void;
+  onClose?: () => void;
   onSelectCover?: (imageUrl: string) => void; // Optional prop to handle selecting an image
 }
 
@@ -58,14 +58,16 @@ export default function CoverUpFeature({ onClose, onSelectCover }: CoverUpFeatur
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-white">Generate Cover</h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          className="text-gray-400 hover:text-white"
-        >
-          Close
-        </Button>
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="text-gray-400 hover:text-white"
+          >
+            Close
+          </Button>
+        )}
       </div>
 
       {/* Content Area */}

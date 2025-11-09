@@ -72,7 +72,7 @@ export async function POST(req: Request) {
         content,
         coverImageUrl,
         authorId: user.id,
-      },
+      } as any,
     });
 
     return NextResponse.json(newStory, { status: 201 });

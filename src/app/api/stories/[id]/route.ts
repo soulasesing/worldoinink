@@ -76,7 +76,7 @@ export async function PUT(
         wordCount: body.wordCount,
         coverImageUrl: body.coverImageUrl,
         updatedAt: new Date(),
-      },
+      } as any,
     });
 
     return NextResponse.json(updatedStory);

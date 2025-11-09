@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Sparkles, MessageCircle, Lightbulb, Zap, Bot
 import { toast } from 'react-hot-toast';
 import GrammarFeature from './grammar-feature';
 import CoverUpFeature from './cover-up-feature';
+import UploadCover from './upload-cover';
 
 interface AiAssistantSidebarProps {
   isOpen: boolean;
@@ -286,7 +287,12 @@ export default function AiAssistantSidebar({ isOpen, onToggle, onSelectCover }: 
                   )}
 
                   {activeFeature === coverUpFeatureIndex && (
-                    <CoverUpFeature onClose={() => setActiveFeature(null)} onSelectCover={onSelectCover} />
+                    <div className="flex-1 overflow-y-auto">
+                      <CoverUpFeature onSelectCover={onSelectCover} />
+                      <div className="border-t border-slate-200 dark:border-slate-700 mt-4">
+                        <UploadCover onImageUploaded={onSelectCover} />
+                      </div>
+                    </div>
                   )}
 
                    {/* Placeholder for other features */}

@@ -19,9 +19,19 @@ export default function CoverUpFeature({ onClose, onSelectCover }: CoverUpFeatur
   const [isGenerating, setIsGenerating] = useState(false);
   const [results, setResults] = useState<CoverGenerationResult[] | null>(null);
 
+  // Calculate optimal description length (leave room for prompt formatting)
+  const MAX_DESCRIPTION_LENGTH = 900; // Safe limit, allowing room for prompt template
+  const descriptionLength = description.length;
+  const isDescriptionTooLong = descriptionLength > MAX_DESCRIPTION_LENGTH;
+
   const generateCover = async () => {
     if (!description.trim()) {
       toast.error('Please enter a description for the cover image.');
+      return;
+    }
+
+    if (isDescriptionTooLong) {
+      toast.error(`Description is too long. Please shorten it to ${MAX_DESCRIPTION_LENGTH} characters or less.`);
       return;
     }
 
@@ -39,15 +49,37 @@ export default function CoverUpFeature({ onClose, onSelectCover }: CoverUpFeatur
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to generate cover image');
+        // Handle specific error types
+        if (response.status === 503) {
+          throw new Error('Network error. Please check your internet connection and try again.');
+        }
+        if (response.status === 504) {
+          throw new Error('Request timed out. The server is taking too long. Please try again.');
+        }
+        if (response.status === 429) {
+          throw new Error('Too many requests. Please wait a moment and try again.');
+        }
+        throw new Error(data.message || 'Failed to generate cover image');
       }
 
-      const data = await response.json();
-      setResults(data.images.map((url: string) => ({ imageUrl: url }))); // Assuming API returns { images: string[] }
-    } catch (error) {
+      setResults(data.images.map((url: string) => ({ imageUrl: url })));
+      
+      // Show warning if some images are temporary
+      if (data.warning) {
+        toast.success('Cover images generated! (Some using temporary URLs)', {
+          duration: 4000,
+        });
+      } else {
+        toast.success('Cover images generated successfully!');
+      }
+    } catch (error: any) {
       console.error('Cover generation error:', error);
-      toast.error('Failed to generate cover image.');
+      toast.error(error.message || 'Failed to generate cover image. Please try again.', {
+        duration: 5000,
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -78,23 +110,51 @@ export default function CoverUpFeature({ onClose, onSelectCover }: CoverUpFeatur
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe the cover image you want to generate (e.g., 'a fantasy landscape with dragons')..."
+            maxLength={MAX_DESCRIPTION_LENGTH}
             className="w-full h-32 px-4 py-3 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 backdrop-blur-sm transition-all duration-300 focus:outline-none border-white/20 hover:border-white/30 focus:border-purple-400 focus:shadow-lg focus:shadow-purple-500/25 resize-none"
           />
+          {/* Character Counter */}
+          <div className={`absolute bottom-2 right-2 text-xs ${
+            isDescriptionTooLong 
+              ? 'text-red-400 font-semibold' 
+              : descriptionLength > MAX_DESCRIPTION_LENGTH * 0.8
+              ? 'text-yellow-400'
+              : 'text-gray-500'
+          }`}>
+            {descriptionLength} / {MAX_DESCRIPTION_LENGTH}
+          </div>
         </div>
+
+        {/* Warning for long descriptions */}
+        {isDescriptionTooLong && (
+          <div className="px-3 py-2 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+            ⚠️ Description is too long. Please shorten it for better results.
+          </div>
+        )}
+
+        {/* Tip */}
+        {!description && (
+          <div className="px-3 py-2 bg-blue-500/10 border border-blue-500/30 rounded-lg text-blue-400 text-sm">
+            💡 <strong>Tip:</strong> Be specific but concise. Mention key elements like genre, mood, colors, and main subjects.
+          </div>
+        )}
 
         {/* Generate Button */}
         <Button
           onClick={generateCover}
-          disabled={isGenerating || !description.trim()}
+          disabled={isGenerating || !description.trim() || isDescriptionTooLong}
           className="w-full py-3 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-yellow-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isGenerating ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Generating...
+              Generating (this may take 10-15 seconds)...
             </>
           ) : (
-            'Generate Cover'
+            <>
+              <Image className="w-4 h-4 mr-2" />
+              Generate Cover (4 variations)
+            </>
           )}
         </Button>
 

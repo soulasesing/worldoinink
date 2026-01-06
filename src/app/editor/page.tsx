@@ -6,30 +6,23 @@ import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-hot-toast';
 import dynamic from 'next/dynamic';
-// import ReactQuill from 'react-quill'; // Removed direct import
 import 'react-quill/dist/quill.snow.css';
 import AiAssistantSidebar from '@/components/assistant/ai-assistant-sidebar';
+import { PublishButton } from '@/components/editor/publish-button';
+import { StatusBadge } from '@/components/editor/status-badge';
+import { formatRelativeDate } from '@/lib/utils/date-formatter';
 import { 
-  Save, 
-  FileText, 
   Plus, 
   FolderOpen, 
   Clock, 
   Trash2, 
   Copy, 
-  Share2, 
-  Settings,
-  Eye,
-  Edit3,
-  Download,
-  Upload,
-  Star,
   BookOpen,
   Image,
   RefreshCw
 } from 'lucide-react';
 
-// Dynamically import ReactQuill to ensure it only renders on the client side
+// Dynamically import ReactQuill
 const ReactQuill = dynamic(
   async () => {
     const { default: RQ } = await import('react-quill');
@@ -40,7 +33,7 @@ const ReactQuill = dynamic(
   { ssr: false }
 );
 
-// Types for better type safety
+// Types matching Prisma schema
 interface Story {
   id: string;
   title: string;
@@ -48,9 +41,8 @@ interface Story {
   createdAt: string;
   updatedAt: string;
   wordCount: number;
-  status: 'draft' | 'published' | 'archived';
-  isFavorite: boolean;
-  coverImageUrl?: string;
+  published: boolean;  // ✅ Coincide con Prisma
+  coverImageUrl?: string | null;
 }
 
 interface EditorState {
@@ -61,7 +53,7 @@ interface EditorState {
 }
 
 export default function EditorPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const storyId = searchParams.get('id');
@@ -70,6 +62,7 @@ export default function EditorPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState<string | undefined>(undefined);
+  const [isPublished, setIsPublished] = useState(false);  // ✅ Nuevo estado
   const [editorState, setEditorState] = useState<EditorState>({
     mode: 'create',
     currentStory: null,
@@ -85,12 +78,11 @@ export default function EditorPage() {
   const [isLoadingStories, setIsLoadingStories] = useState(false);
   
   // Auto-save functionality
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
-  const [saveInterval, setSaveInterval] = useState<NodeJS.Timeout | null>(null);
+  const [autoSaveEnabled] = useState(true);
 
   // Word count calculation
   const getWordCount = useCallback((text: string) => {
-    return text.replace(/<[^>]*>/g, '').trim().split(/\s+/).filter(word => word.length > 0).length;
+    return text.replaceAll(/<[^>]*>/g, '').trim().split(/\s+/).filter(word => word.length > 0).length;
   }, []);
 
   // Check for unsaved changes
@@ -102,17 +94,16 @@ export default function EditorPage() {
     setEditorState(prev => ({ ...prev, hasUnsavedChanges: hasChanges }));
   }, [title, content, editorState.currentStory]);
 
-  // Auto-save functionality
+  // Auto-save functionality - Respeta el estado actual
   useEffect(() => {
     if (autoSaveEnabled && editorState.hasUnsavedChanges && editorState.currentStory) {
       const interval = setTimeout(() => {
-        handleSave(true); // Silent auto-save
+        saveStory(isPublished, true); // Mantiene el estado published actual
       }, 30000); // Auto-save every 30 seconds
       
-      setSaveInterval(interval);
       return () => clearTimeout(interval);
     }
-  }, [editorState.hasUnsavedChanges, autoSaveEnabled, editorState.currentStory]);
+  }, [editorState.hasUnsavedChanges, autoSaveEnabled, editorState.currentStory, isPublished]);
 
   // Authentication check
   useEffect(() => {
@@ -130,6 +121,28 @@ export default function EditorPage() {
     }
   }, [storyId]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl + S: Save
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        handleSaveDraft();
+      }
+      
+      // Cmd/Ctrl + Shift + P: Publish
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'p') {
+        e.preventDefault();
+        if (!isPublished) {
+          handlePublish();
+        }
+      }
+    };
+    
+    globalThis.addEventListener('keydown', handleKeyDown);
+    return () => globalThis.removeEventListener('keydown', handleKeyDown);
+  }, [title, content, isPublished]);
+
   // Load all user stories
   const loadStories = async () => {
     setIsLoadingStories(true);
@@ -139,7 +152,8 @@ export default function EditorPage() {
         const userStories = await response.json();
         setStories(userStories);
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error('Failed to load stories:', error);
       toast.error('Failed to load stories');
     } finally {
       setIsLoadingStories(false);
@@ -157,6 +171,7 @@ export default function EditorPage() {
         setTitle(data.title);
         setContent(data.content);
         setCoverImageUrl(data.coverImageUrl || undefined);
+        setIsPublished(data.published);  // ✅ Sincroniza estado
         setEditorState({
           mode: 'edit',
           currentStory: data,
@@ -167,15 +182,49 @@ export default function EditorPage() {
         toast.error('Story not found');
         router.push('/editor?id=new');
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error('Failed to load story:', error);
       toast.error('Failed to load story');
     } finally {
       setIsLoadingStories(false);
     }
   };
 
-  // Handle save (create or update)
-  const handleSave = async (isAutoSave = false) => {
+  // Validaciones pre-publish
+  const validateBeforePublish = (): { valid: boolean; message?: string } => {
+    if (!title.trim()) {
+      return { valid: false, message: 'Please add a title before publishing' };
+    }
+    
+    if (title.length < 3) {
+      return { valid: false, message: 'Title must be at least 3 characters' };
+    }
+    
+    const wordCount = getWordCount(content);
+    if (wordCount < 50) {
+      return { 
+        valid: false, 
+        message: `Add at least 50 words before publishing (currently ${wordCount})` 
+      };
+    }
+    
+    // Recomendación de portada (no bloqueante)
+    if (!coverImageUrl) {
+      const addCover = confirm(
+        'Your story doesn\'t have a cover image.\n\n' +
+        'Stories with covers get 3x more engagement!\n\n' +
+        'Publish anyway?'
+      );
+      if (!addCover) {
+        return { valid: false };
+      }
+    }
+    
+    return { valid: true };
+  };
+
+  // Función genérica de guardado
+  const saveStory = async (publishedState: boolean, isAutoSave: boolean) => {
     if (!title.trim()) {
       if (!isAutoSave) toast.error('Please enter a title');
       return;
@@ -195,7 +244,7 @@ export default function EditorPage() {
           title,
           content,
           wordCount: getWordCount(content),
-          published: false,
+          published: publishedState,  // ✅ Estado dinámico
           coverImageUrl
         }),
       });
@@ -211,6 +260,7 @@ export default function EditorPage() {
         lastSaved: new Date()
       });
       setCoverImageUrl(savedStory.coverImageUrl || undefined);
+      setIsPublished(savedStory.published);
 
       // Update URL if creating new story
       if (editorState.mode === 'create') {
@@ -218,15 +268,69 @@ export default function EditorPage() {
       }
 
       if (!isAutoSave) {
-        toast.success('Story saved successfully');
+        const message = publishedState 
+          ? 'Story published successfully! 🎉' 
+          : 'Story saved as draft';
+        toast.success(message, {
+          duration: publishedState ? 5000 : 3000,
+        });
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error('Failed to save story:', error);
       if (!isAutoSave) {
         toast.error('Failed to save story');
       }
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Save Draft (mantiene estado actual)
+  const handleSaveDraft = async () => {
+    await saveStory(isPublished, false);
+  };
+
+  // Publish Story
+  const handlePublish = async () => {
+    const validation = validateBeforePublish();
+    
+    if (!validation.valid) {
+      if (validation.message) {
+        toast.error(validation.message, {
+          icon: '📝',
+          duration: 4000,
+        });
+      }
+      return;
+    }
+    
+    const confirmed = confirm(
+      `Publish "${title}"?\n\n` +
+      `This story will be visible to all readers.\n` +
+      `Word count: ${getWordCount(content)}\n\n` +
+      `Ready to publish?`
+    );
+    
+    if (!confirmed) return;
+    
+    await saveStory(true, false);
+  };
+
+  // Unpublish Story
+  const handleUnpublish = async () => {
+    const confirmed = confirm(
+      `Unpublish "${title}"?\n\n` +
+      `This story will no longer be visible to readers.\n` +
+      `You can publish it again later.\n\n` +
+      `Continue?`
+    );
+    
+    if (!confirmed) return;
+    
+    await saveStory(false, false);
+    toast.success('Story moved to drafts', {
+      icon: '📝',
+    });
   };
 
   // Handle new story
@@ -240,6 +344,7 @@ export default function EditorPage() {
     setTitle('');
     setContent('');
     setCoverImageUrl(undefined);
+    setIsPublished(false);  // ✅ Reset estado
     setEditorState({
       mode: 'create',
       currentStory: null,
@@ -253,6 +358,7 @@ export default function EditorPage() {
   const handleDuplicate = () => {
     if (editorState.currentStory) {
       setTitle(`${title} (Copy)`);
+      setIsPublished(false);  // ✅ Copia siempre es draft
       setEditorState({
         mode: 'create',
         currentStory: null,
@@ -260,6 +366,7 @@ export default function EditorPage() {
         lastSaved: null
       });
       router.push('/editor?id=new');
+      toast.success('Story duplicated. Save to create a new copy.');
     }
   };
 
@@ -282,7 +389,8 @@ export default function EditorPage() {
       } else {
         toast.error('Failed to delete story');
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error('Failed to delete story:', error);
       toast.error('Failed to delete story');
     }
   };
@@ -343,31 +451,32 @@ export default function EditorPage() {
             
             {/* Left Section - Story Info */}
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className={`w-3 h-3 rounded-full ${editorState.hasUnsavedChanges ? 'bg-orange-400 animate-pulse' : 'bg-green-400'}`}></div>
-                <span className="text-sm text-slate-600 dark:text-slate-400">
-                  {editorState.mode === 'create' ? 'New Story' : 'Editing'}
-                </span>
-              </div>
+              {/* Status Badge */}
+              <StatusBadge isPublished={isPublished} />
               
-              {editorState.lastSaved && (
-                <div className="flex items-center space-x-1 text-xs text-slate-500">
-                  <Clock className="w-3 h-3" />
-                  <span>Saved {editorState.lastSaved.toLocaleTimeString()}</span>
-                </div>
-              )}
-              
-              <div className="text-xs text-slate-500">
-                {getWordCount(content)} words
+              <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
+                <span>{getWordCount(content)} words</span>
+                
+                {editorState.lastSaved && (
+                  <>
+                    <span>•</span>
+                    <div className="flex items-center space-x-1">
+                      <Clock className="w-3 h-3" />
+                      <span>Saved {formatRelativeDate(editorState.lastSaved.toISOString())}</span>
+                    </div>
+                  </>
+                )}
+                
+                {coverImageUrl && (
+                  <>
+                    <span>•</span>
+                    <div className="flex items-center space-x-1">
+                      <Image className="w-4 h-4" />
+                      <span>Cover ✓</span>
+                    </div>
+                  </>
+                )}
               </div>
-
-              {coverImageUrl && (
-                <div className="flex items-center space-x-1 text-xs text-slate-500">
-                  <Image className="w-4 h-4" />
-                  <span>Cover Attached</span>
-                </div>
-              )}
-
             </div>
 
             {/* Right Section - Actions */}
@@ -414,14 +523,15 @@ export default function EditorPage() {
                 </>
               )}
 
-              <Button
-                onClick={() => handleSave()}
-                disabled={isSaving || !editorState.hasUnsavedChanges}
-                className="flex items-center space-x-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-              >
-                <Save className="w-4 h-4" />
-                <span>{isSaving ? 'Saving...' : 'Save'}</span>
-              </Button>
+              {/* Publish Button Component */}
+              <PublishButton
+                isPublished={isPublished}
+                isSaving={isSaving}
+                hasUnsavedChanges={editorState.hasUnsavedChanges}
+                onSaveDraft={handleSaveDraft}
+                onPublish={handlePublish}
+                onUnpublish={handleUnpublish}
+              />
             </div>
           </div>
         </div>
@@ -445,25 +555,32 @@ export default function EditorPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-60 overflow-y-auto">
               {stories.map((story) => (
-                <div
+                <button
                   key={story.id}
-                  className="p-3 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors"
+                  className="p-3 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors text-left"
                   onClick={() => {
                     router.push(`/editor?id=${story.id}`);
                     setShowStoryManager(false);
                   }}
+                  type="button"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h4 className="font-medium text-slate-800 dark:text-white truncate">{story.title}</h4>
-                      <p className="text-sm text-slate-500 mt-1">{getWordCount(story.content)} words</p>
+                      <div className="flex items-center space-x-2 mb-1">
+                        <h4 className="font-medium text-slate-800 dark:text-white truncate">{story.title}</h4>
+                        {story.published && (
+                          <span className="px-2 py-0.5 text-xs bg-green-500/20 text-green-600 dark:text-green-400 rounded-full">
+                            Published
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-500">{getWordCount(story.content)} words</p>
                       <p className="text-xs text-slate-400 mt-1">
                         {new Date(story.updatedAt).toLocaleDateString()}
                       </p>
                     </div>
-                    {story.isFavorite && <Star className="w-4 h-4 text-yellow-400" />}
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -512,7 +629,7 @@ export default function EditorPage() {
           </div>
 
           {/* Custom styles for Quill editor */}
-          <style jsx global>{`
+          <style>{`
             .ql-editor {
               color: #475569 !important;
               font-size: 16px !important;

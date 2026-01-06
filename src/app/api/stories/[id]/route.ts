@@ -90,5 +90,42 @@ export async function PUT(
   }
 }
 
-// Add DELETE handler later if needed
-// export async function DELETE(...) { ... } 
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const storyId = params.id;
+
+    // Find the story and ensure it belongs to the user
+    const existingStory = await prisma.story.findUnique({
+      where: {
+        id: storyId,
+        authorId: session.user.id,
+      },
+    });
+
+    if (!existingStory) {
+      return NextResponse.json({ message: 'Story not found or you do not have permission' }, { status: 404 });
+    }
+
+    // Delete the story
+    await prisma.story.delete({
+      where: { id: storyId },
+    });
+
+    return NextResponse.json({ message: 'Story deleted successfully' }, { status: 200 });
+  } catch (error) {
+    console.error('Error deleting story:', error);
+    return NextResponse.json(
+      { message: 'Failed to delete story' },
+      { status: 500 }
+    );
+  }
+} 

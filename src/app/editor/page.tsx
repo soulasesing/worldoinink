@@ -25,7 +25,8 @@ import {
   Upload,
   Star,
   BookOpen,
-  Image
+  Image,
+  RefreshCw
 } from 'lucide-react';
 
 // Dynamically import ReactQuill to ensure it only renders on the client side
@@ -194,7 +195,7 @@ export default function EditorPage() {
           title,
           content,
           wordCount: getWordCount(content),
-          status: 'draft',
+          published: false,
           coverImageUrl
         }),
       });
@@ -435,8 +436,10 @@ export default function EditorPage() {
                 size="sm"
                 onClick={loadStories}
                 disabled={isLoadingStories}
+                className="flex items-center space-x-1 text-blue-300"
               >
-                {isLoadingStories ? 'Loading...' : 'Refresh'}
+                <RefreshCw className="w-4 h-4" />
+                <span>{isLoadingStories ? 'Loading...' : 'Refresh'}</span>
               </Button>
             </div>
             
@@ -504,7 +507,7 @@ export default function EditorPage() {
               modules={modules}
               formats={formats}
               placeholder="Start writing your story..."
-              className="h-[calc(100vh-350px)] bg-white/70 dark:bg-slate-800/70 rounded-lg shadow-sm border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm"
+              className="h-[calc(100vh-350px)] bg-white/90 dark:bg-white/85 rounded-lg shadow-sm border border-slate-200/50 dark:border-slate-300/50 backdrop-blur-sm"
             />
           </div>
 
@@ -518,11 +521,11 @@ export default function EditorPage() {
             }
             
             .dark .ql-editor {
-              color: #cbd5e1 !important;
+              color: #1e293b !important;
             }
             
             .ql-editor.ql-blank::before {
-              color: #94a3b8 !important;
+              color: #64748b !important;
               font-style: italic;
             }
             
@@ -535,8 +538,8 @@ export default function EditorPage() {
             }
             
             .dark .ql-toolbar.ql-snow {
-              border-color: #475569;
-              background: rgba(51, 65, 85, 0.8);
+              border-color: #d1d5db;
+              background: rgba(249, 250, 251, 0.9);
             }
             
             .ql-container.ql-snow {
@@ -546,7 +549,7 @@ export default function EditorPage() {
             }
             
             .dark .ql-container.ql-snow {
-              border-color: #475569;
+              border-color: #d1d5db;
             }
             
             .ql-editor h1, .ql-editor h2, .ql-editor h3 {
@@ -554,7 +557,7 @@ export default function EditorPage() {
             }
             
             .dark .ql-editor h1, .dark .ql-editor h2, .dark .ql-editor h3 {
-              color: #f1f5f9 !important;
+              color: #0f172a !important;
             }
             
             .ql-editor strong {
@@ -562,7 +565,7 @@ export default function EditorPage() {
             }
             
             .dark .ql-editor strong {
-              color: #e2e8f0 !important;
+              color: #0f172a !important;
             }
             
             .ql-editor a {
@@ -581,8 +584,8 @@ export default function EditorPage() {
             
             .dark .ql-editor blockquote {
               border-left-color: #475569;
-              color: #94a3b8 !important;
-              background: rgba(51, 65, 85, 0.3);
+              color: #475569 !important;
+              background: rgba(241, 245, 249, 0.3);
             }
             
             .ql-snow .ql-tooltip {

@@ -52,8 +52,8 @@ export async function PUT(
     const body = await req.json();
 
     // Basic validation (can use Zod here as well if preferred)
-    if (!body.title || !body.content) {
-        return NextResponse.json({ message: 'Title and content are required' }, { status: 400 });
+    if (!body.title) {
+        return NextResponse.json({ message: 'Title is required' }, { status: 400 });
     }
 
     // Find the story to update and ensure it belongs to the user
@@ -73,10 +73,11 @@ export async function PUT(
       data: {
         title: body.title,
         content: body.content,
-        wordCount: body.wordCount,
+        published: body.published ?? existingStory.published,
+        wordCount: body.wordCount ?? 0,
         coverImageUrl: body.coverImageUrl,
         updatedAt: new Date(),
-      } as any,
+      },
     });
 
     return NextResponse.json(updatedStory);

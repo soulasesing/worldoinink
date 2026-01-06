@@ -67,11 +67,18 @@ export default function CoverUpFeature({ onClose, onSelectCover }: CoverUpFeatur
 
       setResults(data.images.map((url: string) => ({ imageUrl: url })));
       
-      // Show warning if some images are temporary
-      if (data.warning) {
-        toast.success('Cover images generated! (Some using temporary URLs)', {
-          duration: 4000,
-        });
+      // Show info based on storage type
+      if (data.info) {
+        if (data.info.includes('Data URLs')) {
+          toast.success('Cover images generated! (Using embedded images)', {
+            duration: 4000,
+            icon: '✅',
+          });
+        } else {
+          toast.success('Cover images generated and stored successfully!', {
+            duration: 3000,
+          });
+        }
       } else {
         toast.success('Cover images generated successfully!');
       }

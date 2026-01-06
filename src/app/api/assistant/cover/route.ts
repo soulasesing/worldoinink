@@ -70,106 +70,90 @@ export async function POST(req: Request) {
     console.log('Sending prompt to OpenAI:', optimizedPrompt);
 
     try {
+      // Request images in base64 format to avoid Azure Blob Storage dependency
+      // This works with corporate firewalls (Zscaler) that block *.blob.core.windows.net
       const response = await openai.images.generate({
-        model: "dall-e-2", // Use dall-e-2 to allow generating multiple images
+        model: "dall-e-2",
         prompt: optimizedPrompt,
-        n: 4, // Request 4 images
+        n: 4,
         size: "1024x1024",
+        response_format: "b64_json", // ⭐ Get base64 instead of URLs
       });
 
       // Check if response.data exists and is an array
       if (!response.data || !Array.isArray(response.data)) {
          console.error('Invalid OpenAI response format:', response);
-         return new NextResponse('Invalid response from image generation service', { status: 500 });
+         return NextResponse.json(
+           { message: 'Invalid response from image generation service' }, 
+           { status: 500 }
+         );
       }
 
-      // Filter out any undefined URLs to ensure fetch receives a string
-      const imageUrls = response.data.map(item => item.url).filter((url): url is string => typeof url === 'string');
-
-      console.log(`Received ${imageUrls.length} image URLs from OpenAI`);
+      console.log(`Received ${response.data.length} images in base64 format from OpenAI`);
 
       const permanentImageUrls: string[] = [];
-      const failedDownloads: string[] = [];
 
-      // Download and upload images with retry logic
-      for (let i = 0; i < imageUrls.length; i++) {
-        const tempUrl = imageUrls[i];
-        let retries = 3;
-        let success = false;
+      // Process all images in parallel for better performance
+      const uploadPromises = response.data.map(async (item, index) => {
+        try {
+          const b64 = item.b64_json;
+          
+          if (!b64) {
+            console.error(`Image ${index + 1} has no b64_json data`);
+            return null;
+          }
 
-        while (retries > 0 && !success) {
-          try {
-            console.log(`Downloading image ${i + 1}/${imageUrls.length} (attempt ${4 - retries}/3)...`);
+          // Check if Vercel Blob is configured
+          if (process.env.BLOB_READ_WRITE_TOKEN) {
+            console.log(`Uploading image ${index + 1} to Vercel Blob...`);
             
-            // Download image from OpenAI's temporary URL with timeout
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-            const imageResponse = await fetch(tempUrl, {
-              signal: controller.signal,
-            });
-            clearTimeout(timeoutId);
-
-            if (!imageResponse.ok) {
-              throw new Error(`HTTP ${imageResponse.status}: ${imageResponse.statusText}`);
-            }
-
-            const blob = await imageResponse.blob();
-            console.log(`Downloaded image ${i + 1}, size: ${blob.size} bytes`);
-
-            // Check if Vercel Blob is configured
-            if (!process.env.BLOB_READ_WRITE_TOKEN) {
-              console.warn('BLOB_READ_WRITE_TOKEN not configured, returning temporary URL');
-              permanentImageUrls.push(tempUrl);
-              success = true;
-              break;
-            }
-
-            // Create a unique filename for Vercel Blob Storage
-            const filename = `cover-${Date.now()}-${Math.random().toString(36).substring(2, 15)}.png`;
+            // Convert base64 to Buffer
+            const buffer = Buffer.from(b64, 'base64');
+            
+            // Create a unique filename
+            const filename = `cover-${Date.now()}-${index}-${Math.random().toString(36).substring(2, 9)}.png`;
 
             // Upload to Vercel Blob Storage
-            const { url: permanentUrl } = await put(filename, blob, {
+            const { url: permanentUrl } = await put(filename, buffer, {
               access: 'public',
+              contentType: 'image/png',
             });
             
-            console.log(`Uploaded to Vercel Blob: ${permanentUrl}`);
-            permanentImageUrls.push(permanentUrl);
-            success = true;
-
-          } catch (error: any) {
-            retries--;
-            console.error(`Error downloading image ${i + 1} (${retries} retries left):`, error.message);
-            
-            if (retries === 0) {
-              failedDownloads.push(tempUrl);
-              
-              // If this is a network error and we have the temp URL, use it as fallback
-              if (error.code === 'ENOTFOUND' || error.code === 'ETIMEDOUT' || error.name === 'AbortError') {
-                console.warn(`Using temporary URL as fallback for image ${i + 1}`);
-                permanentImageUrls.push(tempUrl);
-              }
-            } else {
-              // Wait before retrying
-              await new Promise(resolve => setTimeout(resolve, 1000));
-            }
+            console.log(`✅ Image ${index + 1} uploaded to Vercel Blob: ${permanentUrl}`);
+            return permanentUrl;
+          } else {
+            // Fallback: return as Data URL (works everywhere, including behind firewalls)
+            console.log(`No BLOB_READ_WRITE_TOKEN, using Data URL for image ${index + 1}`);
+            return `data:image/png;base64,${b64}`;
           }
+        } catch (error: any) {
+          console.error(`Error processing image ${index + 1}:`, error.message);
+          // Return null, will be filtered out
+          return null;
         }
-      }
+      });
 
-      console.log(`Successfully processed ${permanentImageUrls.length}/${imageUrls.length} images`);
+      // Wait for all uploads/conversions to complete
+      const results = await Promise.all(uploadPromises);
       
-      if (permanentImageUrls.length === 0) {
+      // Filter out any failed images
+      const successfulUrls = results.filter((url): url is string => url !== null);
+      
+      console.log(`Successfully processed ${successfulUrls.length}/${response.data.length} images`);
+      
+      if (successfulUrls.length === 0) {
         return NextResponse.json(
-          { message: 'Failed to download any generated images. Please try again.' },
+          { message: 'Failed to process any generated images. Please try again.' },
           { status: 500 }
         );
       }
 
-      // Return the URLs (permanent or temporary fallback)
+      // Return the URLs (permanent Vercel Blob URLs or Data URLs)
       return NextResponse.json({ 
-        images: permanentImageUrls,
-        warning: failedDownloads.length > 0 ? 'Some images are using temporary URLs' : undefined
+        images: successfulUrls,
+        info: process.env.BLOB_READ_WRITE_TOKEN 
+          ? 'Images stored permanently' 
+          : 'Images embedded as Data URLs'
       });
 
     } catch (openaiError: any) {

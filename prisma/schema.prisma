@@ -24,6 +24,7 @@ model User {
   stories       Story[]
   characters    Character[]
   subscription  Subscription?
+  writingStyle  WritingStyle?
 }
 
 model Account {
@@ -91,4 +92,91 @@ model Subscription {
   stripeCurrentPeriodEnd DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+// ============================================
+// WRITING STYLE ANALYSIS MODELS
+// ============================================
+
+model WritingStyle {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  
+  // === ANÁLISIS BÁSICO ===
+  narrativeVoice  String   @default("third-person")  // "first-person", "third-person-limited", "third-person-omniscient"
+  preferredTense  String   @default("past")          // "past", "present", "mixed"
+  
+  // === MÉTRICAS DE ESTILO ===
+  avgSentenceLength    Float    @default(0)  // Promedio de palabras por oración
+  avgParagraphLength   Float    @default(0)  // Promedio de oraciones por párrafo
+  vocabularyLevel      String   @default("intermediate") // "basic", "intermediate", "advanced", "literary"
+  
+  // === TONO Y VOZ ===
+  dominantTones        String[] // ["melancholic", "poetic", "hopeful", "dark"]
+  writingPace          String   @default("moderate")     // "fast", "moderate", "slow", "variable"
+  descriptiveDensity   String   @default("moderate")     // "sparse", "moderate", "rich", "very-rich"
+  
+  // === PATRONES ÚNICOS ===
+  signaturePhrases     Json     @default("{}")  // { "como si": 23, "sin embargo": 15 }
+  favoriteWords        Json     @default("{}")  // { "silencio": 45, "sombra": 32 }
+  avoidedWords         String[] @default([])    // ["muy", "cosa", "hacer"]
+  
+  // === ESTILO DE DIÁLOGO ===
+  dialogueStyle        String   @default("natural")  // "natural", "formal", "dialectal", "minimalist"
+  dialogueFrequency    Float    @default(0)     // % del texto que es diálogo (0-100)
+  
+  // === COMPARACIONES ===
+  similarAuthors       Json     @default("[]")  // [{ "name": "García Márquez", "similarity": 0.72 }]
+  literaryMovement     String?                  // "realismo mágico", "modernismo", etc.
+  
+  // === METADATA ===
+  analyzedStories      Int      @default(0)
+  totalWordsAnalyzed   Int      @default(0)
+  confidence           Float    @default(0)     // 0-1, qué tan confiable es el análisis
+  lastAnalyzed         DateTime @updatedAt
+  isActive             Boolean  @default(true)
+  
+  // === RELACIONES ===
+  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  styleExamples        StyleExample[]
+  
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  
+  @@index([userId])
+}
+
+model StyleExample {
+  id              String   @id @default(cuid())
+  styleId         String
+  
+  // === CONTENIDO DEL EJEMPLO ===
+  text            String   @db.Text    // Párrafo representativo del estilo
+  context         String?              // De qué historia/capítulo viene
+  storyTitle      String?              // Título de la historia original
+  
+  // === CLASIFICACIÓN ===
+  exampleType     ExampleType          // Por qué es representativo este ejemplo
+  
+  // === METADATA ===
+  wordCount       Int      @default(0)
+  relevanceScore  Float    @default(0) // 0-1, qué tan representativo es
+  
+  // === RELACIONES ===
+  style           WritingStyle @relation(fields: [styleId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([styleId])
+  @@index([exampleType])
+}
+
+enum ExampleType {
+  NARRATIVE_VOICE      // Ejemplo de voz narrativa característica
+  DESCRIPTIVE          // Ejemplo de estilo descriptivo
+  DIALOGUE             // Ejemplo de diálogo característico
+  EMOTIONAL            // Ejemplo de tono emocional
+  SIGNATURE_STYLE      // Ejemplo de estilo único/firma del autor
+  OPENING              // Ejemplo de cómo abre historias
+  TRANSITION           // Ejemplo de transiciones entre escenas
 } 

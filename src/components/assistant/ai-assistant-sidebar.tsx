@@ -1,11 +1,12 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Sparkles, MessageCircle, Lightbulb, Zap, Bot, Settings, Send, Loader2, ImageIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, MessageCircle, Zap, Bot, Settings, Send, Loader2, ImageIcon, Palette } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import GrammarFeature from './grammar-feature';
 import CoverUpFeature from './cover-up-feature';
 import UploadCover from './upload-cover';
+import StyleAwareGenerator from '@/components/style/style-aware-generator';
 
 interface AiAssistantSidebarProps {
   isOpen: boolean;
@@ -32,12 +33,14 @@ export default function AiAssistantSidebar({ isOpen, onToggle, onSelectCover }: 
     { icon: MessageCircle, label: 'Chat', color: 'from-blue-500 to-cyan-500' },
     { icon: ImageIcon, label: 'CoverUp', color: 'from-yellow-500 to-orange-500' },
     { icon: Zap, label: 'Grammar', color: 'from-green-500 to-emerald-500' },
-    { icon: Bot, label: 'Characters', color: 'from-purple-500 to-pink-500' }
+    { icon: Palette, label: 'Mi Estilo', color: 'from-purple-500 to-pink-500' },
+    { icon: Bot, label: 'Characters', color: 'from-indigo-500 to-blue-500' }
   ];
 
   const chatFeatureIndex = features.findIndex(f => f.label === 'Chat');
   const grammarFeatureIndex = features.findIndex(f => f.label === 'Grammar');
   const coverUpFeatureIndex = features.findIndex(f => f.label === 'CoverUp');
+  const styleFeatureIndex = features.findIndex(f => f.label === 'Mi Estilo');
 
   // Scroll to the latest message
   useEffect(() => {
@@ -295,8 +298,22 @@ export default function AiAssistantSidebar({ isOpen, onToggle, onSelectCover }: 
                     </div>
                   )}
 
+                  {/* Style Aware Generator Feature */}
+                  {activeFeature === styleFeatureIndex && (
+                    <StyleAwareGenerator
+                      onGenerate={(text) => {
+                        // Copy to clipboard and notify
+                        navigator.clipboard.writeText(text);
+                        toast.success('¡Texto copiado al portapapeles! Pégalo en tu editor.', {
+                          duration: 4000,
+                        });
+                      }}
+                      currentContext=""
+                    />
+                  )}
+
                    {/* Placeholder for other features */}
-                  {activeFeature !== chatFeatureIndex && activeFeature !== grammarFeatureIndex && activeFeature !== coverUpFeatureIndex && (
+                  {activeFeature !== chatFeatureIndex && activeFeature !== grammarFeatureIndex && activeFeature !== coverUpFeatureIndex && activeFeature !== styleFeatureIndex && (
                       <div className="flex flex-col items-center justify-center h-full text-gray-400">
                         <p className="text-center">{`'${features[activeFeature]?.label}' feature coming soon!`}</p>
                       </div>

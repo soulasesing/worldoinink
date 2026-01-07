@@ -49,6 +49,7 @@ export function Navbar() {
                 {[
                   { href: '/dashboard', label: 'Dashboard' },
                   { href: '/editor', label: 'Editor' },
+                  { href: '/style', label: 'Mi Estilo' },
                   { href: '/characters', label: 'Characters' }
                 ].map((item) => (
                   <Link
@@ -153,6 +154,7 @@ export function Navbar() {
               {[
                 { href: '/dashboard', label: 'Dashboard' },
                 { href: '/editor', label: 'Editor' },
+                { href: '/style', label: 'Mi Estilo' },
                 { href: '/characters', label: 'Characters' }
               ].map((item, index) => (
                 <Link

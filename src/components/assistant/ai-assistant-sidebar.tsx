@@ -7,6 +7,54 @@ import GrammarFeature from './grammar-feature';
 import CoverUpFeature from './cover-up-feature';
 import UploadCover from './upload-cover';
 import StyleAwareGenerator from '@/components/style/style-aware-generator';
+import CharacterManager from './character-manager';
+
+/**
+ * Safe clipboard copy function that handles focus issues
+ * Falls back to legacy execCommand if Clipboard API fails
+ */
+async function copyToClipboard(text: string): Promise<boolean> {
+  // Try modern Clipboard API first
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+      console.warn('Clipboard API failed, trying fallback:', err);
+    }
+  }
+
+  // Fallback: Create a temporary textarea and use execCommand
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    
+    // Prevent scrolling to bottom
+    textArea.style.position = 'fixed';
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.width = '2em';
+    textArea.style.height = '2em';
+    textArea.style.padding = '0';
+    textArea.style.border = 'none';
+    textArea.style.outline = 'none';
+    textArea.style.boxShadow = 'none';
+    textArea.style.background = 'transparent';
+    textArea.style.opacity = '0';
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    
+    return successful;
+  } catch (err) {
+    console.error('All clipboard methods failed:', err);
+    return false;
+  }
+}
 
 interface AiAssistantSidebarProps {
   isOpen: boolean;
@@ -41,6 +89,7 @@ export default function AiAssistantSidebar({ isOpen, onToggle, onSelectCover }: 
   const grammarFeatureIndex = features.findIndex(f => f.label === 'Grammar');
   const coverUpFeatureIndex = features.findIndex(f => f.label === 'CoverUp');
   const styleFeatureIndex = features.findIndex(f => f.label === 'Mi Estilo');
+  const charactersFeatureIndex = features.findIndex(f => f.label === 'Characters');
 
   // Scroll to the latest message
   useEffect(() => {
@@ -301,19 +350,35 @@ export default function AiAssistantSidebar({ isOpen, onToggle, onSelectCover }: 
                   {/* Style Aware Generator Feature */}
                   {activeFeature === styleFeatureIndex && (
                     <StyleAwareGenerator
-                      onGenerate={(text) => {
-                        // Copy to clipboard and notify
-                        navigator.clipboard.writeText(text);
-                        toast.success('¡Texto copiado al portapapeles! Pégalo en tu editor.', {
-                          duration: 4000,
-                        });
+                      onGenerate={async (text) => {
+                        // Copy to clipboard safely (handles focus issues)
+                        const success = await copyToClipboard(text);
+                        if (success) {
+                          toast.success('¡Texto copiado al portapapeles! Pégalo en tu editor.', {
+                            duration: 4000,
+                            icon: '📋',
+                          });
+                        } else {
+                          toast.error('No se pudo copiar automáticamente. Selecciona y copia el texto manualmente.', {
+                            duration: 5000,
+                          });
+                        }
                       }}
                       currentContext=""
                     />
                   )}
 
+                  {/* Characters Manager Feature */}
+                  {activeFeature === charactersFeatureIndex && (
+                    <CharacterManager />
+                  )}
+
                    {/* Placeholder for other features */}
-                  {activeFeature !== chatFeatureIndex && activeFeature !== grammarFeatureIndex && activeFeature !== coverUpFeatureIndex && activeFeature !== styleFeatureIndex && (
+                  {activeFeature !== chatFeatureIndex && 
+                   activeFeature !== grammarFeatureIndex && 
+                   activeFeature !== coverUpFeatureIndex && 
+                   activeFeature !== styleFeatureIndex && 
+                   activeFeature !== charactersFeatureIndex && (
                       <div className="flex flex-col items-center justify-center h-full text-gray-400">
                         <p className="text-center">{`'${features[activeFeature]?.label}' feature coming soon!`}</p>
                       </div>

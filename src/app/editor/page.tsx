@@ -11,6 +11,12 @@ import AiAssistantSidebar from '@/components/assistant/ai-assistant-sidebar';
 import { PublishButton } from '@/components/editor/publish-button';
 import { StatusBadge } from '@/components/editor/status-badge';
 import { formatRelativeDate } from '@/lib/utils/date-formatter';
+// NEW: Personajes Vivos 2.0
+import { LiveCharactersButton } from '@/components/live-characters/live-characters-button';
+import { CharacterDiscoveryModal } from '@/components/live-characters/character-discovery-modal';
+import { LiveCharacterIntervention } from '@/components/live-characters/live-character-intervention';
+import { LiveCharactersPanel } from '@/components/live-characters/live-characters-panel';
+import { useContextualIntervention } from '@/hooks/useContextualIntervention';
 import { 
   Plus, 
   FolderOpen, 
@@ -79,6 +85,59 @@ export default function EditorPage() {
   
   // Auto-save functionality
   const [autoSaveEnabled] = useState(true);
+  
+  // ============================================
+  // PERSONAJES VIVOS 2.0 - Estado
+  // ============================================
+  const [showDiscoveryModal, setShowDiscoveryModal] = useState(false);
+  const [showCharactersPanel, setShowCharactersPanel] = useState(false);
+  const [isRefreshingCharacters, setIsRefreshingCharacters] = useState(false);
+  const [liveCharacters, setLiveCharacters] = useState<Array<{
+    id: string;
+    name: string;
+    role: string;
+    personality: string;
+    avatar: string;
+    isActive: boolean;
+  }>>([]);
+  const [hasDiscoveredCharacters, setHasDiscoveredCharacters] = useState(false);
+  const [liveCharactersEnabled, setLiveCharactersEnabled] = useState(true);
+  
+  // Story ID efectivo
+  const effectiveStoryId = storyId && storyId !== 'new' ? storyId : editorState.currentStory?.id || null;
+
+  // ============================================
+  // PERSONAJES VIVOS 2.0 - Intervención Contextual
+  // ============================================
+  const {
+    currentIntervention,
+    dismissIntervention,
+    triggerManualIntervention,
+    isChecking: isCheckingIntervention,
+  } = useContextualIntervention({
+    storyContent: content,
+    characters: liveCharacters,
+    storyId: effectiveStoryId,
+    isEnabled: liveCharactersEnabled && hasDiscoveredCharacters,
+  });
+
+  // Toggle character active state
+  const handleToggleCharacter = (characterId: string) => {
+    setLiveCharacters(prev => 
+      prev.map(char => 
+        char.id === characterId 
+          ? { ...char, isActive: !char.isActive }
+          : char
+      )
+    );
+  };
+
+  // Refresh characters (rediscover)
+  const handleRefreshCharacters = () => {
+    if (effectiveStoryId) {
+      setShowDiscoveryModal(true);
+    }
+  };
 
   // Word count calculation
   const getWordCount = useCallback((text: string) => {
@@ -120,6 +179,29 @@ export default function EditorPage() {
       handleNewStory();
     }
   }, [storyId]);
+  
+  // Personajes Vivos 2.0: Check if story has discovered characters
+  useEffect(() => {
+    if (effectiveStoryId) {
+      checkForLiveCharacters(effectiveStoryId);
+    }
+  }, [effectiveStoryId]);
+  
+  const checkForLiveCharacters = async (storyId: string) => {
+    try {
+      const response = await fetch(`/api/story/${storyId}/live-characters`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.characters && data.characters.length > 0) {
+          setLiveCharacters(data.characters);
+          setHasDiscoveredCharacters(true);
+        }
+      }
+    } catch {
+      // Expected when no characters are discovered yet - not an error
+      console.log('[LiveCharacters] No characters discovered yet');
+    }
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -720,6 +802,67 @@ export default function EditorPage() {
           `}</style>
         </div>
       </div>
+
+      {/* ============================================ */}
+      {/* PERSONAJES VIVOS 2.0 */}
+      {/* ============================================ */}
+      
+      {/* Botón "Dar Vida a mis Personajes" - aparece cuando hay 300+ palabras */}
+      <LiveCharactersButton
+        wordCount={getWordCount(content)}
+        hasCharacters={hasDiscoveredCharacters}
+        charactersCount={liveCharacters.filter(c => c.isActive).length}
+        onActivate={() => setShowDiscoveryModal(true)}
+        onManage={() => setShowCharactersPanel(true)}
+      />
+      
+      {/* Panel de Personajes Vivos */}
+      <LiveCharactersPanel
+        isOpen={showCharactersPanel}
+        onClose={() => setShowCharactersPanel(false)}
+        characters={liveCharacters}
+        onToggleCharacter={handleToggleCharacter}
+        onRefreshCharacters={handleRefreshCharacters}
+        onTriggerIntervention={triggerManualIntervention}
+        isRefreshing={isRefreshingCharacters}
+      />
+      
+      {/* Modal de Descubrimiento de Personajes */}
+      <CharacterDiscoveryModal
+        isOpen={showDiscoveryModal}
+        onClose={() => setShowDiscoveryModal(false)}
+        storyId={effectiveStoryId}
+        storyContent={content}
+        onCharactersDiscovered={(characters) => {
+          setLiveCharacters(characters);
+          setHasDiscoveredCharacters(true);
+          setLiveCharactersEnabled(true);
+          setShowDiscoveryModal(false);
+          setIsRefreshingCharacters(false);
+          toast.success(`🎭 ¡${characters.length} personajes han cobrado vida!`);
+        }}
+      />
+      
+      {/* Intervención de Personaje Vivo - Contextual */}
+      {currentIntervention && (
+        <LiveCharacterIntervention
+          intervention={currentIntervention}
+          onDismiss={dismissIntervention}
+          onAcceptSuggestion={(suggestion) => {
+            // Don't add literal message to story, just acknowledge
+            dismissIntervention();
+            toast.success('✨ Tomaste nota de la intervención');
+          }}
+        />
+      )}
+      
+      {/* Indicator de intervención en proceso */}
+      {isCheckingIntervention && hasDiscoveredCharacters && (
+        <div className="fixed bottom-8 left-8 z-40 flex items-center gap-2 px-4 py-2 bg-purple-500/20 border border-purple-500/30 rounded-full text-purple-300 text-sm backdrop-blur-sm">
+          <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
+          <span>Personajes observando...</span>
+        </div>
+      )}
     </div>
   );
 }

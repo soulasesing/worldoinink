@@ -80,6 +80,24 @@ model Character {
   authorId    String
   author      User     @relation(fields: [authorId], references: [id])
   stories     Story[]
+  
+  // === INTERVENCIÓN IA - PERSONALIDAD ===
+  personality     Json?    // { "temperament": "passionate", "speakingStyle": "formal", "humor": "sarcastic" }
+  voiceTone       String   @default("neutral")  // "friendly", "serious", "playful", "dramatic", "mysterious"
+  emotionalRange  String[] @default([])  // ["anger", "joy", "fear", "curiosity"]
+  
+  // === TRIGGERS DE INTERVENCIÓN ===
+  triggerTopics   String[] @default([])  // Temas que activan al personaje: ["love", "danger", "betrayal"]
+  triggerWords    String[] @default([])  // Palabras específicas: ["muerte", "traición", "secreto"]
+  
+  // === CONFIGURACIÓN DE INTERVENCIÓN ===
+  interventionEnabled  Boolean  @default(true)
+  interventionStyle    String   @default("suggestion") // "suggestion", "complaint", "question", "encouragement"
+  interventionFrequency String  @default("medium")     // "low", "medium", "high"
+  
+  // === HISTORIAL ===
+  lastIntervention    DateTime?
+  totalInterventions  Int      @default(0)
 }
 
 model Subscription {

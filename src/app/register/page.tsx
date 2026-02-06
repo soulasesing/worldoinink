@@ -191,11 +191,14 @@ export default function Register() {
 
         <div className="relative z-10 text-center max-w-lg mx-auto">
           <div className="mb-12 relative">
-            <div className="w-32 h-32 mx-auto bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 rounded-full flex items-center justify-center text-6xl animate-bounce shadow-2xl shadow-emerald-500/30">
-              ✍️
+            <div className="relative mx-auto">
+              <div className="absolute -inset-4 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 rounded-full blur-2xl opacity-50 animate-pulse" />
+              <img 
+                src="/worldinink_logo.png" 
+                alt="World in Ink" 
+                className="relative h-32 w-32 mx-auto object-contain drop-shadow-2xl animate-bounce"
+              />
             </div>
-            <div className="absolute -inset-8 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 rounded-full blur-lg opacity-30 animate-pulse"></div>
-            <div className="absolute -inset-4 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 rounded-full blur opacity-20 animate-ping"></div>
           </div>
           
           <h2 className="text-6xl font-black mb-6 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent leading-tight">
@@ -290,7 +293,18 @@ export default function Register() {
             {/* Header */}
             <div className="text-center mb-10">
               <div className="mb-6">
-                <h1 className="text-6xl font-black mb-4 bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent leading-tight">
+                {/* Logo */}
+                <div className="flex justify-center mb-4">
+                  <div className="relative">
+                    <div className="absolute -inset-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-xl opacity-40" />
+                    <img 
+                      src="/worldinink_logo.png" 
+                      alt="World in Ink" 
+                      className="relative h-24 w-24 object-contain drop-shadow-2xl"
+                    />
+                  </div>
+                </div>
+                <h1 className="text-5xl font-black mb-4 bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent leading-tight">
                   World in Ink
                 </h1>
                 <div className="w-24 h-1 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full"></div>

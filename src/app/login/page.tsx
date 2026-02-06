@@ -93,6 +93,17 @@ export default function LoginPage() {
           <div className="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 shadow-2xl">
             {/* Header */}
             <div className="text-center mb-8">
+              {/* Logo */}
+              <div className="flex justify-center mb-6">
+                <div className="relative">
+                  <div className="absolute -inset-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-xl opacity-40" />
+                  <img 
+                    src="/worldinink_logo.png" 
+                    alt="World in Ink" 
+                    className="relative h-20 w-20 object-contain drop-shadow-2xl"
+                  />
+                </div>
+              </div>
               <h1 className="text-4xl font-black mb-2 bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
                 Welcome Back
               </h1>

@@ -34,10 +34,12 @@ export function Navbar() {
             <div className="flex items-center">
               <Link href="/" className="group flex items-center space-x-3 mr-8">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur opacity-75 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="relative bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-full">
-                    <div className="h-5 w-5 text-white flex items-center justify-center text-lg">✨</div>
-                  </div>
+                  <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-md opacity-50 group-hover:opacity-70 transition-opacity duration-300" />
+                  <img 
+                    src="/worldinink_logo.png" 
+                    alt="World in Ink" 
+                    className="relative h-10 w-10 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-300"
+                  />
                 </div>
                 <span className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
                   World in Ink

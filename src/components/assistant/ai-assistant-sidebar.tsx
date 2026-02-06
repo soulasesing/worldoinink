@@ -202,9 +202,12 @@ export default function AiAssistantSidebar({ isOpen, onToggle, onSelectCover }: 
             {isOpen && (
               <div className="flex items-center space-x-3 animate-fadeIn">
                 <div className="relative">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <Sparkles className="w-5 h-5 text-white animate-pulse" />
-                  </div>
+                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-md opacity-50" />
+                  <img 
+                    src="/worldinink_logo.png" 
+                    alt="World in Ink" 
+                    className="relative w-10 h-10 object-contain drop-shadow-lg"
+                  />
                   <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full animate-ping"></div>
                 </div>
                 <div>
@@ -426,8 +429,13 @@ export default function AiAssistantSidebar({ isOpen, onToggle, onSelectCover }: 
         {!isOpen && (
           <div className="flex flex-col items-center py-6 space-y-4">
             <div className="relative group">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Sparkles className="w-5 h-5 text-white animate-pulse" />
+              <div className="relative">
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
+                <img 
+                  src="/worldinink_logo.png" 
+                  alt="World in Ink" 
+                  className="relative w-10 h-10 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-300"
+                />
               </div>
               {isHovering && (
                 <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black/90 text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap z-50 animate-fadeIn">

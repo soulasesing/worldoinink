@@ -1,13 +1,14 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Sparkles, MessageCircle, Zap, Bot, Settings, Send, Loader2, ImageIcon, Palette } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, MessageCircle, Zap, Bot, Settings, Send, Loader2, ImageIcon, Palette, AudioLines } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import GrammarFeature from './grammar-feature';
 import CoverUpFeature from './cover-up-feature';
 import UploadCover from './upload-cover';
 import StyleAwareGenerator from '@/components/style/style-aware-generator';
 import CharacterManager from './character-manager';
+import AudioFeature from './audio-feature';
 
 /**
  * Safe clipboard copy function that handles focus issues
@@ -82,7 +83,8 @@ export default function AiAssistantSidebar({ isOpen, onToggle, onSelectCover }: 
     { icon: ImageIcon, label: 'CoverUp', color: 'from-yellow-500 to-orange-500' },
     { icon: Zap, label: 'Grammar', color: 'from-green-500 to-emerald-500' },
     { icon: Palette, label: 'Mi Estilo', color: 'from-purple-500 to-pink-500' },
-    { icon: Bot, label: 'Characters', color: 'from-indigo-500 to-blue-500' }
+    { icon: Bot, label: 'Characters', color: 'from-indigo-500 to-blue-500' },
+    { icon: AudioLines, label: 'Audio', color: 'from-pink-500 to-purple-500' }
   ];
 
   const chatFeatureIndex = features.findIndex(f => f.label === 'Chat');
@@ -90,6 +92,7 @@ export default function AiAssistantSidebar({ isOpen, onToggle, onSelectCover }: 
   const coverUpFeatureIndex = features.findIndex(f => f.label === 'CoverUp');
   const styleFeatureIndex = features.findIndex(f => f.label === 'Mi Estilo');
   const charactersFeatureIndex = features.findIndex(f => f.label === 'Characters');
+  const audioFeatureIndex = features.findIndex(f => f.label === 'Audio');
 
   // Scroll to the latest message
   useEffect(() => {
@@ -373,12 +376,18 @@ export default function AiAssistantSidebar({ isOpen, onToggle, onSelectCover }: 
                     <CharacterManager />
                   )}
 
+                  {/* Audio Narration Feature */}
+                  {activeFeature === audioFeatureIndex && (
+                    <AudioFeature />
+                  )}
+
                    {/* Placeholder for other features */}
                   {activeFeature !== chatFeatureIndex && 
                    activeFeature !== grammarFeatureIndex && 
                    activeFeature !== coverUpFeatureIndex && 
                    activeFeature !== styleFeatureIndex && 
-                   activeFeature !== charactersFeatureIndex && (
+                   activeFeature !== charactersFeatureIndex && 
+                   activeFeature !== audioFeatureIndex && (
                       <div className="flex flex-col items-center justify-center h-full text-gray-400">
                         <p className="text-center">{`'${features[activeFeature]?.label}' feature coming soon!`}</p>
                       </div>

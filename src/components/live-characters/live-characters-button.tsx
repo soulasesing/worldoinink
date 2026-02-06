@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sparkles, Users, ChevronRight } from 'lucide-react';
+import { Sparkles, ChevronRight } from 'lucide-react';
 
 interface LiveCharactersButtonProps {
   wordCount: number;
@@ -23,6 +23,7 @@ export function LiveCharactersButton({
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [showPulse, setShowPulse] = useState(true);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   // Show button when word count threshold is reached
   useEffect(() => {
@@ -31,52 +32,105 @@ export function LiveCharactersButton({
     }
   }, [wordCount]);
 
-  // Stop pulse after first interaction
+  // Stop pulse after first interaction and auto-minimize after discovery
   useEffect(() => {
     if (hasCharacters) {
       setShowPulse(false);
+      // Auto-minimize after 5 seconds of discovering characters
+      const timer = setTimeout(() => setIsMinimized(true), 5000);
+      return () => clearTimeout(timer);
     }
   }, [hasCharacters]);
 
   if (!isVisible) return null;
 
-  // If characters already discovered, show manage button
+  // If characters already discovered, show manage button (minimizable)
   if (hasCharacters) {
-    return (
-      <button
-        onClick={onManage}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        className={`fixed bottom-24 right-8 z-40 flex items-center gap-3 px-5 py-3 rounded-2xl transition-all duration-500 ease-out transform ${
-          isHovered ? 'scale-105' : 'scale-100'
-        }`}
-        style={{
-          background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.9) 0%, rgba(236, 72, 153, 0.9) 100%)',
-          boxShadow: isHovered 
-            ? '0 20px 40px -10px rgba(139, 92, 246, 0.5), 0 0 60px -15px rgba(236, 72, 153, 0.4)'
-            : '0 10px 30px -10px rgba(139, 92, 246, 0.3)',
-        }}
-      >
-        {/* Character Avatars Stack */}
-        <div className="flex -space-x-2">
-          {[...Array(Math.min(charactersCount, 3))].map((_, i) => (
-            <div
-              key={i}
-              className="w-8 h-8 rounded-full bg-white/20 border-2 border-white/30 flex items-center justify-center text-sm"
-              style={{ zIndex: 3 - i }}
-            >
-              {['🎭', '✨', '👤'][i]}
+    // Minimized state - small icon button
+    if (isMinimized) {
+      return (
+        <button
+          onClick={() => setIsMinimized(false)}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          className={`fixed bottom-24 right-8 z-40 w-12 h-12 rounded-full transition-all duration-300 flex items-center justify-center ${
+            isHovered ? 'scale-110' : 'scale-100'
+          }`}
+          style={{
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.9) 0%, rgba(236, 72, 153, 0.9) 100%)',
+            boxShadow: isHovered 
+              ? '0 10px 30px -5px rgba(139, 92, 246, 0.5)'
+              : '0 5px 20px -5px rgba(139, 92, 246, 0.3)',
+          }}
+          title="Ver personajes vivos"
+        >
+          <span className="text-lg">🎭</span>
+          {/* Badge with count */}
+          <div className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center text-[10px] font-bold text-purple-600 shadow-lg">
+            {charactersCount}
+          </div>
+          {/* Tooltip on hover */}
+          {isHovered && (
+            <div className="absolute right-full mr-3 px-3 py-1.5 bg-slate-800 rounded-lg whitespace-nowrap text-white text-sm">
+              {charactersCount} Personajes Vivos
+              <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1 w-2 h-2 bg-slate-800 rotate-45" />
             </div>
-          ))}
-        </div>
+          )}
+        </button>
+      );
+    }
+
+    // Expanded state with minimize button
+    return (
+      <div className="fixed bottom-24 right-8 z-40 flex items-center gap-2">
+        {/* Minimize button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsMinimized(true);
+          }}
+          className="w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-700 flex items-center justify-center transition-all duration-200 hover:scale-110"
+          title="Minimizar"
+        >
+          <ChevronRight className="w-4 h-4 text-white" />
+        </button>
         
-        <div className="text-white">
-          <div className="text-sm font-bold">{charactersCount} Personajes Vivos</div>
-          <div className="text-xs text-white/70">Activos en tu historia</div>
-        </div>
-        
-        <ChevronRight className={`w-5 h-5 text-white/70 transition-transform duration-300 ${isHovered ? 'translate-x-1' : ''}`} />
-      </button>
+        {/* Main button */}
+        <button
+          onClick={onManage}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          className={`flex items-center gap-3 px-5 py-3 rounded-2xl transition-all duration-500 ease-out transform ${
+            isHovered ? 'scale-105' : 'scale-100'
+          }`}
+          style={{
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.9) 0%, rgba(236, 72, 153, 0.9) 100%)',
+            boxShadow: isHovered 
+              ? '0 20px 40px -10px rgba(139, 92, 246, 0.5), 0 0 60px -15px rgba(236, 72, 153, 0.4)'
+              : '0 10px 30px -10px rgba(139, 92, 246, 0.3)',
+          }}
+        >
+          {/* Character Avatars Stack */}
+          <div className="flex -space-x-2">
+            {[...Array(Math.min(charactersCount, 3))].map((_, i) => (
+              <div
+                key={`char-${i}`}
+                className="w-8 h-8 rounded-full bg-white/20 border-2 border-white/30 flex items-center justify-center text-sm"
+                style={{ zIndex: 3 - i }}
+              >
+                {['🎭', '✨', '👤'][i]}
+              </div>
+            ))}
+          </div>
+          
+          <div className="text-white">
+            <div className="text-sm font-bold">{charactersCount} Personajes Vivos</div>
+            <div className="text-xs text-white/70">Activos en tu historia</div>
+          </div>
+          
+          <ChevronRight className={`w-5 h-5 text-white/70 transition-transform duration-300 ${isHovered ? 'translate-x-1' : ''}`} />
+        </button>
+      </div>
     );
   }
 

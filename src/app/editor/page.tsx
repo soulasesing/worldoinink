@@ -17,6 +17,9 @@ import { CharacterDiscoveryModal } from '@/components/live-characters/character-
 import { LiveCharacterIntervention } from '@/components/live-characters/live-character-intervention';
 import { LiveCharactersPanel } from '@/components/live-characters/live-characters-panel';
 import { useContextualIntervention } from '@/hooks/useContextualIntervention';
+// NEW: Audio Narration / Text-to-Speech
+import { NarrationButton, AudioNarrationPanel } from '@/components/audio-narration';
+import { stripHtmlForTTS } from '@/types/audio';
 import { 
   Plus, 
   FolderOpen, 
@@ -103,6 +106,15 @@ export default function EditorPage() {
   const [hasDiscoveredCharacters, setHasDiscoveredCharacters] = useState(false);
   const [liveCharactersEnabled, setLiveCharactersEnabled] = useState(true);
   
+  // ============================================
+  // AUDIO NARRATION / TTS - Estado
+  // ============================================
+  const [showNarrationMenu, setShowNarrationMenu] = useState(false);
+  const [showNarrationPanel, setShowNarrationPanel] = useState(false);
+  const [narrationText, setNarrationText] = useState('');
+  const [isNarrationSelection, setIsNarrationSelection] = useState(false);
+  const [selectedText, setSelectedText] = useState('');
+  
   // Story ID efectivo
   const effectiveStoryId = storyId && storyId !== 'new' ? storyId : editorState.currentStory?.id || null;
 
@@ -137,6 +149,56 @@ export default function EditorPage() {
     if (effectiveStoryId) {
       setShowDiscoveryModal(true);
     }
+  };
+
+  // ============================================
+  // AUDIO NARRATION / TTS - Funciones
+  // ============================================
+  
+  // Detectar texto seleccionado
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      const selection = window.getSelection();
+      if (selection && selection.toString().trim().length > 0) {
+        setSelectedText(selection.toString().trim());
+      } else {
+        setSelectedText('');
+      }
+    };
+    
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => document.removeEventListener('selectionchange', handleSelectionChange);
+  }, []);
+  
+  // Narrar historia completa
+  const handleNarrateAll = () => {
+    const cleanContent = stripHtmlForTTS(content);
+    if (!cleanContent.trim()) {
+      toast.error('No hay contenido para narrar');
+      return;
+    }
+    setNarrationText(cleanContent);
+    setIsNarrationSelection(false);
+    setShowNarrationMenu(false);
+    setShowNarrationPanel(true);
+  };
+  
+  // Narrar texto seleccionado
+  const handleNarrateSelection = () => {
+    if (!selectedText.trim()) {
+      toast.error('Selecciona texto primero');
+      return;
+    }
+    setNarrationText(selectedText);
+    setIsNarrationSelection(true);
+    setShowNarrationMenu(false);
+    setShowNarrationPanel(true);
+  };
+  
+  // Cerrar panel de narración
+  const handleCloseNarration = () => {
+    setShowNarrationPanel(false);
+    setNarrationText('');
   };
 
   // Word count calculation
@@ -863,6 +925,27 @@ export default function EditorPage() {
           <span>Personajes observando...</span>
         </div>
       )}
+
+      {/* ============================================ */}
+      {/* AUDIO NARRATION / TEXT-TO-SPEECH */}
+      {/* ============================================ */}
+      
+      {/* Botón flotante de narración */}
+      <NarrationButton
+        onNarrateAll={handleNarrateAll}
+        onNarrateSelection={handleNarrateSelection}
+        hasSelection={selectedText.length > 0}
+        isOpen={showNarrationMenu}
+        onToggle={() => setShowNarrationMenu(!showNarrationMenu)}
+      />
+      
+      {/* Panel de narración con selector de voz y reproductor */}
+      <AudioNarrationPanel
+        isOpen={showNarrationPanel}
+        onClose={handleCloseNarration}
+        text={narrationText}
+        isSelection={isNarrationSelection}
+      />
     </div>
   );
 }

@@ -68,6 +68,10 @@ model Story {
   author      User     @relation(fields: [authorId], references: [id])
   characters  Character[]
   coverImageUrl String?
+  
+  // === NARRACIÓN INTERACTIVA MULTIRUTA ===
+  isInteractive  Boolean      @default(false)
+  storyNodes     StoryNode[]
 }
 
 model Character {
@@ -197,4 +201,65 @@ enum ExampleType {
   SIGNATURE_STYLE      // Ejemplo de estilo único/firma del autor
   OPENING              // Ejemplo de cómo abre historias
   TRANSITION           // Ejemplo de transiciones entre escenas
+}
+
+// ============================================
+// NARRACIÓN INTERACTIVA MULTIRUTA
+// ============================================
+
+model StoryNode {
+  id          String   @id @default(cuid())
+  storyId     String
+  story       Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  
+  // === CONTENIDO DEL NODO ===
+  title       String            // "Capítulo 1" o "El bosque oscuro"
+  content     String   @db.Text // Contenido HTML del fragmento
+  nodeType    NodeType @default(CONTENT)
+  
+  // === POSICIÓN EN EL ÁRBOL ===
+  position    Int      @default(0)  // Orden para nodos raíz
+  isStart     Boolean  @default(false)
+  isEnding    Boolean  @default(false)
+  
+  // === RELACIONES ===
+  outgoingChoices  Choice[]  @relation("FromNode")
+  incomingChoices  Choice[]  @relation("ToNode")
+  
+  // === METADATA ===
+  wordCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([storyId])
+  @@index([isStart])
+}
+
+model Choice {
+  id          String    @id @default(cuid())
+  
+  // === CONEXIÓN ===
+  fromNodeId  String
+  fromNode    StoryNode @relation("FromNode", fields: [fromNodeId], references: [id], onDelete: Cascade)
+  toNodeId    String
+  toNode      StoryNode @relation("ToNode", fields: [toNodeId], references: [id], onDelete: Cascade)
+  
+  // === CONTENIDO DE LA DECISIÓN ===
+  text        String    // "Entrar al bosque" o "Escapar corriendo"
+  emoji       String?   // "🌲" o "🏃"
+  position    Int       @default(0) // Orden de las opciones
+  
+  // === ESTADÍSTICAS ===
+  timesChosen Int       @default(0)
+  
+  createdAt   DateTime  @default(now())
+  
+  @@index([fromNodeId])
+  @@index([toNodeId])
+}
+
+enum NodeType {
+  CONTENT     // Nodo normal con texto
+  DECISION    // Nodo que presenta opciones (deprecated - usar outgoingChoices)
+  ENDING      // Final de una ruta
 } 

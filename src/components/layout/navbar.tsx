@@ -50,6 +50,7 @@ export function Navbar() {
               <nav className="hidden md:flex items-center space-x-1">
                 {[
                   { href: '/dashboard', label: 'Dashboard' },
+                  { href: '/library', label: 'Lector' },
                   { href: '/editor', label: 'Editor' },
                   { href: '/style', label: 'Mi Estilo' },
                   { href: '/characters', label: 'Characters' }
@@ -155,6 +156,7 @@ export function Navbar() {
             <div className="space-y-4">
               {[
                 { href: '/dashboard', label: 'Dashboard' },
+                { href: '/library', label: 'Lector' },
                 { href: '/editor', label: 'Editor' },
                 { href: '/style', label: 'Mi Estilo' },
                 { href: '/characters', label: 'Characters' }

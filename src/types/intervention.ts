@@ -18,17 +18,25 @@ export const defaultInterventionSettings: InterventionSettings = {
   frequency: 'medium',
   allowedTypes: ['suggestion', 'question', 'encouragement', 'complaint'],
   notificationStyle: 'popup',
+  interventionTypes: ['suggestion', 'question', 'encouragement', 'reaction'],
+  showEmotions: true,
+  soundEnabled: false,
 };
 
 // ============================================
 // SETTINGS TYPES
 // ============================================
 
+export type InterventionType = 'suggestion' | 'complaint' | 'question' | 'encouragement' | 'reaction' | 'warning' | 'memory' | 'dialogue_help';
+
 export interface InterventionSettings {
   enabled: boolean;
   frequency: 'low' | 'medium' | 'high';
   allowedTypes: Array<'suggestion' | 'complaint' | 'question' | 'encouragement' | 'reaction'>;
   notificationStyle: 'popup' | 'toast' | 'inline';
+  interventionTypes: InterventionType[];
+  showEmotions?: boolean;
+  soundEnabled?: boolean;
 }
 
 // ============================================

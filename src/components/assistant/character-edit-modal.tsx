@@ -28,7 +28,7 @@ interface Character {
   interventionFrequency: string;
   totalInterventions: number;
   lastIntervention: string | null;
-  stories: Array<{ id: string; title: string }>;
+  stories?: Array<{ id: string; title: string }>;
   createdAt: string;
   updatedAt: string;
 }

@@ -25,7 +25,7 @@ interface UseInterventionMonitorReturn {
   intervention: InterventionData | null;
   isChecking: boolean;
   dismissIntervention: () => void;
-  checkForIntervention: (currentText: string, recentAddition: string) => Promise<void>;
+  checkForIntervention: (currentText: string) => void;
   lastCheckedAt: Date | null;
   isEnabled: boolean;
   toggleEnabled: () => void;

@@ -277,7 +277,7 @@ export default function CharacterManager() {
                     {(character.stories?.length ?? 0) > 0 && (
                       <span className="flex items-center gap-1">
                         <BookOpen className="w-3 h-3" />
-                        {character.stories.length} historia{character.stories.length !== 1 ? 's' : ''}
+                        {character.stories?.length ?? 0} historia{(character.stories?.length ?? 0) !== 1 ? 's' : ''}
                       </span>
                     )}
                   </div>

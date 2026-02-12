@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-hot-toast';
 import dynamic from 'next/dynamic';
@@ -61,7 +61,7 @@ interface EditorState {
   lastSaved: Date | null;
 }
 
-export default function EditorPage() {
+function EditorPageContent() {
   const { status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -947,5 +947,18 @@ export default function EditorPage() {
         isSelection={isNarrationSelection}
       />
     </div>
+  );
+}
+
+// Wrap in Suspense for useSearchParams
+export default function EditorPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+      </div>
+    }>
+      <EditorPageContent />
+    </Suspense>
   );
 }

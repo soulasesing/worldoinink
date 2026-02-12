@@ -3,7 +3,7 @@
 
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { getUserStyleProfile } from '@/lib/style-analysis/style-service';
 import { generateInUserStyle } from '@/lib/style-analysis/ai-analyzer';
 import { z } from 'zod';
